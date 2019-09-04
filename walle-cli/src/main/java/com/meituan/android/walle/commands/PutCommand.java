@@ -27,6 +27,9 @@ public class PutCommand implements IWalleCommand{
     @Parameter(names = {"-c", "--channel"}, description = "single channel, eg: -c meituan")
     private String channel;
 
+    @Parameter(names = {"-n", "--nameFormat"}, description = " apk file name format, which will be replace _CHANNEL_, eg: -n meituan_v1.0.0-_CHANNEL_-debug.apk")
+    private String apkFileNameFormat;
+
     @Override
     public void parse() {
         final File inputFile = files.get(0);
@@ -34,10 +37,15 @@ public class PutCommand implements IWalleCommand{
         if (files.size() == 2) {
             outputFile = files.get(1);
         } else {
-            final String name = FilenameUtils.getBaseName(inputFile.getName());
-            final String extension = FilenameUtils.getExtension(inputFile.getName());
-            final String newName = name + "_" + channel + "." + extension;
-            outputFile = new File(inputFile.getParent(), newName);
+            if(apkFileNameFormat == null || !apkFileNameFormat.contains("_CHANNEL_")){
+                final String name = FilenameUtils.getBaseName(inputFile.getName());
+                final String extension = FilenameUtils.getExtension(inputFile.getName());
+                final String newName = name + "_" + channel + "." + extension;
+                outputFile = new File(inputFile.getParent(), newName);
+            }else{
+                final String newName = apkFileNameFormat.replaceAll("_CHANNEL_", channel);
+                outputFile = new File(inputFile.getParent(), newName);
+            }
         }
         if (inputFile.equals(outputFile)) {
             try {

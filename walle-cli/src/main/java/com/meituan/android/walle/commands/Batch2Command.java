@@ -29,6 +29,9 @@ public class Batch2Command implements IWalleCommand {
     @Parameter(names = {"-f", "--configFile"}, description = "config file (json)")
     private File configFile;
 
+    @Parameter(names = {"-n", "--nameFormat"}, description = " apk file name format, which will be replace _CHANNEL_, eg: -n meituan_v1.0.0-_CHANNEL_-debug.apk")
+    private String apkFileNameFormat;
+
     @Override
     public void parse() {
         final File inputFile = files.get(0);
@@ -80,10 +83,16 @@ public class Batch2Command implements IWalleCommand {
 
     private void generateChannelApk(final File inputFile, final File outputDir, final String channel, final String alias, final Map<String, String> extraInfo) {
         final String channelName = alias == null ? channel : alias;
-        final String name = FilenameUtils.getBaseName(inputFile.getName());
-        final String extension = FilenameUtils.getExtension(inputFile.getName());
-        final String newName = name + "_" + channelName + "." + extension;
-        final File channelApk = new File(outputDir, newName);
+        File channelApk = null;
+        if(apkFileNameFormat == null || !apkFileNameFormat.contains("_CHANNEL_")){
+            final String name = FilenameUtils.getBaseName(inputFile.getName());
+            final String extension = FilenameUtils.getExtension(inputFile.getName());
+            final String newName = name + "_" + channelName + "." + extension;
+            channelApk = new File(outputDir, newName);
+        }else{
+            final String newName = apkFileNameFormat.replaceAll("_CHANNEL_", channelName);
+            channelApk = new File(outputDir, newName);
+        }
         try {
             FileUtils.copyFile(inputFile, channelApk);
             ChannelWriter.put(channelApk, channel, extraInfo);

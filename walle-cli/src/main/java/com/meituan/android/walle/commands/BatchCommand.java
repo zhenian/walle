@@ -33,6 +33,9 @@ public class BatchCommand implements IWalleCommand {
     @Parameter(names = {"-f", "--channelFile"}, description = "channel file")
     private File channelFile;
 
+    @Parameter(names = {"-n", "--nameFormat"}, description = " apk file name format, which will be replace _CHANNEL_, eg: -n meituan_v1.0.0-_CHANNEL_-debug.apk")
+    private String apkFileNameFormat;
+
     @Override
     public void parse() {
         final File inputFile = files.get(0);
@@ -72,10 +75,17 @@ public class BatchCommand implements IWalleCommand {
     }
 
     private void generateChannelApk(final File inputFile, final File outputDir, final String channel) {
-        final String name = FilenameUtils.getBaseName(inputFile.getName());
-        final String extension = FilenameUtils.getExtension(inputFile.getName());
-        final String newName = name + "_" + channel + "." + extension;
-        final File channelApk = new File(outputDir, newName);
+        File channelApk = null;
+        if(apkFileNameFormat == null || !apkFileNameFormat.contains("_CHANNEL_")){
+            final String name = FilenameUtils.getBaseName(inputFile.getName());
+            final String extension = FilenameUtils.getExtension(inputFile.getName());
+            final String newName = name + "_" + channel + "." + extension;
+            channelApk = new File(outputDir, newName);
+        }else{
+            final String newName = apkFileNameFormat.replaceAll("_CHANNEL_", channel);
+            channelApk = new File(outputDir, newName);
+        }
+
         try {
             FileUtils.copyFile(inputFile, channelApk);
             ChannelWriter.put(channelApk, channel, extraInfo);
